@@ -12,7 +12,7 @@ do_compile[noexec] = "1"
 do_deploy[depends] += "esp-hosted-firmware:do_deploy virtual/kernel:do_deploy esp32s3-minimal-image:do_deploy esp32s3-etc-image:do_deploy"
 
 do_deploy() {
-    bundle="${DEPLOYDIR}/esp32s3-devkitc-1-8m-flash-bundle"
+    bundle="${DEPLOYDIR}/${MACHINE}-flash-bundle"
     rm -rf "$bundle"
     install -d "$bundle"
 

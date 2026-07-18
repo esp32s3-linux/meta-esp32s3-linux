@@ -1,7 +1,6 @@
 # ESP32-S3 Linux BSP Layer
 
-`meta-esp32s3-linux` provides a Yocto Wrynose BSP for the ESP32-S3 DevKitC-1
-with 8 MB flash and 8 MB PSRAM.
+`meta-esp32s3-linux` provides a Yocto Wrynose BSP for the ESP32-S3 DevKitC-1.
 
 The target runs Linux on ESP32-S3 core 1 using a no-MMU Xtensa `call0` FDPIC
 ABI. ESP-Hosted firmware runs on core 0 and provides Wi-Fi to Linux.
@@ -10,8 +9,10 @@ ABI. ESP-Hosted firmware runs on core 0 and provides Wi-Fi to Linux.
 
 | Property | Value |
 |---|---|
-| Machine | `esp32s3-devkitc-1-8m` |
+| Machine | `esp32s3-devkitc-1-n16r8` |
 | Architecture | Xtensa ESP32-S3 |
+| Flash | 16 MB |
+| PSRAM | 8 MB |
 | ABI | `call0` FDPIC, no MMU |
 | C library | uClibc-ng |
 | Kernel | Linux 6.11 `xipImage` |
@@ -52,7 +53,7 @@ Set the machine and local artifact paths in `build/conf/local.conf`. Do not add
 machine-local absolute paths to this layer.
 
 ```bitbake
-MACHINE = "esp32s3-devkitc-1-8m"
+MACHINE = "esp32s3-devkitc-1-n16r8"
 TCMODE = "external-xtensa-esp32s3-fdpic"
 
 XTENSA_EXTERNAL_TOOLCHAIN = "/path/to/xtensa-esp32s3-linux-uclibcfdpic"
@@ -104,13 +105,13 @@ Individual targets are also available:
 Artifacts are deployed below:
 
 ```text
-build/tmp/deploy/images/esp32s3-devkitc-1-8m/
+build/tmp/deploy/images/esp32s3-devkitc-1-n16r8/
 ```
 
 The complete bundle is:
 
 ```text
-esp32s3-devkitc-1-8m-flash-bundle/
+esp32s3-devkitc-1-n16r8-flash-bundle/
   bootloader.bin
   network_adapter.bin
   partition-table.bin
@@ -121,13 +122,13 @@ esp32s3-devkitc-1-8m-flash-bundle/
 ```
 
 The flashing script validates image sizes against `partition-table.bin`. For
-the current 8 MB layout:
+the N16R8 layout:
 
 | Partition | Offset | Size |
 |---|---:|---:|
 | `etc` | `0x000b0000` | `0x00070000` |
-| `linux` | `0x00120000` | `0x00360000` |
-| `rootfs` | `0x00480000` | `0x00380000` |
+| `linux` | `0x00120000` | `0x004e0000` |
+| `rootfs` | `0x00600000` | `0x009f0000` |
 
 `etc.jffs2` is padded to the full `etc` partition size. This ensures flashing a
 smaller replacement filesystem does not leave stale JFFS2 nodes in later erase
@@ -142,7 +143,7 @@ python3 -m pip install --user esptool
 
 python3 recipes-bsp/esp32s3-flash/files/flash-esp32s3-linux.py \
   --port /dev/ttyUSB0 \
-  --bundle /path/to/esp32s3-devkitc-1-8m-flash-bundle
+  --bundle /path/to/esp32s3-devkitc-1-n16r8-flash-bundle
 ```
 
 On macOS, the port is typically `/dev/tty.usbserial-*` or

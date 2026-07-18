@@ -31,7 +31,13 @@ python do_deploy() {
         bb.fatal("ESP_HOSTED_BUILD_DIR does not contain flasher_args.json: %s" % source)
 
     with open(config, encoding="utf-8") as stream:
-        flash_files = json.load(stream).get("flash_files", {})
+        flash_config = json.load(stream)
+    flash_files = flash_config.get("flash_files", {})
+    configured_size = flash_config.get("flash_settings", {}).get("flash_size")
+    expected_size = d.getVar("ESP32S3_FLASH_SIZE")
+    if configured_size != expected_size:
+        bb.fatal("ESP-Hosted flash size %s does not match machine flash size %s" %
+                 (configured_size, expected_size))
 
     files = {"flasher_args.json", "partition-table.bin"}
     files.update(os.path.basename(filename) for filename in flash_files.values())

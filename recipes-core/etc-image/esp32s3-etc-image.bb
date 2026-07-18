@@ -10,7 +10,7 @@ DEPENDS = "mtd-utils-native"
 
 INHIBIT_DEFAULT_DEPS = "1"
 SRC_URI = "file://fstab file://passwd file://shadow file://group file://shells \
-           file://hostname file://hosts file://profile file://inittab file://rcS file://rcK \
+           file://hostname file://hosts file://profile file://inittab file://securetty file://rcS file://rcK \
            file://interfaces file://wpa_supplicant.conf file://S40network"
 
 S = "${UNPACKDIR}"
@@ -18,7 +18,9 @@ S = "${UNPACKDIR}"
 do_configure[noexec] = "1"
 
 do_compile() {
-    install -d ${B}/rootfs/init.d ${B}/rootfs/network
+    install -d ${B}/rootfs/init.d ${B}/rootfs/network/interfaces.d \
+        ${B}/rootfs/network/if-pre-up.d ${B}/rootfs/network/if-up.d \
+        ${B}/rootfs/network/if-down.d ${B}/rootfs/network/if-post-down.d
     install -m 0644 ${S}/fstab ${B}/rootfs/fstab
     install -m 0644 ${S}/passwd ${B}/rootfs/passwd
     install -m 0600 ${S}/shadow ${B}/rootfs/shadow
@@ -28,6 +30,7 @@ do_compile() {
     install -m 0644 ${S}/hosts ${B}/rootfs/hosts
     install -m 0644 ${S}/profile ${B}/rootfs/profile
     install -m 0644 ${S}/inittab ${B}/rootfs/inittab
+    install -m 0600 ${S}/securetty ${B}/rootfs/securetty
     install -m 0755 ${S}/rcS ${B}/rootfs/init.d/rcS
     install -m 0755 ${S}/rcK ${B}/rootfs/init.d/rcK
     install -m 0644 ${S}/interfaces ${B}/rootfs/network/interfaces

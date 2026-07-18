@@ -10,6 +10,7 @@ TUNEVALID[nommu] = "No MMU"
 AVAILTUNES += "xtensa-esp32s3-fdpic"
 TUNE_FEATURES:tune-xtensa-esp32s3-fdpic = "xtensa call0 fdpic nommu"
 TUNE_ARCH = "xtensa"
+TUNE_CCARGS = "-mfdpic -mauto-litpools"
 TUNE_PKGARCH = "xtensa-call0-fdpic"
 PACKAGE_EXTRA_ARCHS:tune-xtensa-esp32s3-fdpic = "${TUNE_PKGARCH}"
 

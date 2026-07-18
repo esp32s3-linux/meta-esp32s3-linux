@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: MIT
+
+CC = "${CCACHE}${HOST_PREFIX}gcc ${HOST_CC_ARCH}${TOOLCHAIN_OPTIONS}"
+CXX = "${CCACHE}${HOST_PREFIX}g++ ${HOST_CC_ARCH}${TOOLCHAIN_OPTIONS}"
+CPP = "${HOST_PREFIX}gcc -E${TOOLCHAIN_OPTIONS} ${HOST_CC_ARCH}"
+LD = "${HOST_PREFIX}ld${TOOLCHAIN_OPTIONS} ${HOST_LD_ARCH}"
+CCLD = "${CC}"
+AR = "${HOST_PREFIX}gcc-ar"
+AS = "${HOST_PREFIX}as ${HOST_AS_ARCH}"
+RANLIB = "${HOST_PREFIX}gcc-ranlib"
+STRIP = "${HOST_PREFIX}strip"
+OBJCOPY = "${HOST_PREFIX}objcopy"
+OBJDUMP = "${HOST_PREFIX}objdump"
+STRINGS = "${HOST_PREFIX}strings"
+NM = "${HOST_PREFIX}gcc-nm"
+READELF = "${HOST_PREFIX}readelf"
+
+TCOVERRIDE = "toolchain-external-xtensa-esp32s3"

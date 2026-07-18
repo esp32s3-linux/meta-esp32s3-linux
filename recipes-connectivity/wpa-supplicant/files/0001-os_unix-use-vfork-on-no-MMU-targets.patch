@@ -1,0 +1,106 @@
+From: ESP32-S3 Linux BSP <noreply@example.com>
+Subject: [PATCH] os_unix: use vfork on no-MMU targets
+
+Allocate the argument vector before vfork so the child only calls execv and
+_exit. no-MMU uClibc does not provide fork.
+
+Upstream-Status: Inappropriate [no-MMU target adaptation]
+---
+ src/utils/os_unix.c | 89 ++++++++++++++++++++++++---------------------
+ 1 file changed, 48 insertions(+), 41 deletions(-)
+
+diff --git a/src/utils/os_unix.c b/src/utils/os_unix.c
+--- a/src/utils/os_unix.c
++++ b/src/utils/os_unix.c
+@@ -821,52 +821,57 @@
+ int os_exec(const char *program, const char *arg, int wait_completion)
+ {
+ 	pid_t pid;
+ 	int pid_status;
++	/* Run the external command in the child process. */
++	const int MAX_ARG = 30;
++	char *_program, *_arg, *pos;
++	char *argv[MAX_ARG + 1];
++	int i;
+ 
+-	pid = fork();
++	_program = os_strdup(program);
++	_arg = os_strdup(arg);
++	if (!_program || !_arg) {
++		os_free(_program);
++		os_free(_arg);
++		return -1;
++	}
++
++	argv[0] = _program;
++
++	i = 1;
++	pos = _arg;
++	while (i < MAX_ARG && pos && *pos) {
++		while (*pos == ' ')
++			pos++;
++		if (*pos == '\0')
++			break;
++		argv[i++] = pos;
++		pos = os_strchr(pos, ' ');
++		if (pos)
++			*pos++ = '\0';
++	}
++	argv[i] = NULL;
++
++	pid = vfork();
+ 	if (pid < 0) {
+-		perror("fork");
++		perror("vfork");
++		os_free(_program);
++		os_free(_arg);
+ 		return -1;
+ 	}
+ 
+ 	if (pid == 0) {
+-		/* run the external command in the child process */
+-		const int MAX_ARG = 30;
+-		char *_program, *_arg, *pos;
+-		char *argv[MAX_ARG + 1];
+-		int i;
+-
+-		_program = os_strdup(program);
+-		_arg = os_strdup(arg);
+-
+-		argv[0] = _program;
+-
+-		i = 1;
+-		pos = _arg;
+-		while (i < MAX_ARG && pos && *pos) {
+-			while (*pos == ' ')
+-				pos++;
+-			if (*pos == '\0')
+-				break;
+-			argv[i++] = pos;
+-			pos = os_strchr(pos, ' ');
+-			if (pos)
+-				*pos++ = '\0';
+-		}
+-		argv[i] = NULL;
+-
+ 		execv(program, argv);
+-		perror("execv");
+-		os_free(_program);
+-		os_free(_arg);
+-		exit(0);
+-		return -1;
++		_exit(127);
+ 	}
+ 
+ 	if (wait_completion) {
+ 		/* wait for the child process to complete in the parent */
+ 		waitpid(pid, &pid_status, 0);
+ 	}
+ 
++	os_free(_program);
++	os_free(_arg);
++
+ 	return 0;
+ }
+-- 
+2.43.0

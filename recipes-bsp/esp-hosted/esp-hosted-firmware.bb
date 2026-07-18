@@ -9,8 +9,10 @@ LICENSE = "Apache-2.0"
 # downloads and Python dependencies are mirrored.
 ESP_HOSTED_BUILD_DIR ?= ""
 
-inherit deploy
+inherit deploy nopackages
 
+INHIBIT_DEFAULT_DEPS = "1"
+do_configure[noexec] = "1"
 do_compile[noexec] = "1"
 
 python do_deploy() {

@@ -3,12 +3,13 @@
 SUMMARY = "Gather ESP32-S3 firmware and Linux flash artifacts"
 LICENSE = "MIT"
 
-inherit deploy
+inherit deploy nopackages
 
 DEPENDS = "esp-hosted-firmware virtual/kernel esp32s3-minimal-image esp32s3-etc-image"
+INHIBIT_DEFAULT_DEPS = "1"
 
 do_compile[noexec] = "1"
-do_deploy[depends] += "esp-hosted-firmware:do_deploy virtual/kernel:do_deploy esp32s3-minimal-image:do_image_complete esp32s3-etc-image:do_image_complete"
+do_deploy[depends] += "esp-hosted-firmware:do_deploy virtual/kernel:do_deploy esp32s3-minimal-image:do_deploy esp32s3-etc-image:do_deploy"
 
 do_deploy() {
     bundle="${DEPLOYDIR}/esp32s3-devkitc-1-8m-flash-bundle"

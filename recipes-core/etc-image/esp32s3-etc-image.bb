@@ -2,21 +2,28 @@
 
 SUMMARY = "Initial writable /etc JFFS2 image for ESP32-S3"
 LICENSE = "MIT"
+LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/MIT;md5=0835ade698e0bcf8506ecda2f7b4f302"
 
-inherit image
+inherit deploy nopackages
 
-IMAGE_FSTYPES = "jffs2"
-IMAGE_NAME = "etc"
-IMAGE_LINK_NAME = "etc"
-EXTRA_IMAGECMD:jffs2 = "--little-endian --eraseblock=0x10000"
-
-IMAGE_INSTALL = "base-files"
-IMAGE_PREPROCESS_COMMAND += "esp32s3_prepare_etc;"
-
-esp32s3_prepare_etc() {
-    rm -rf ${IMAGE_ROOTFS}/*
-    install -d ${IMAGE_ROOTFS}/etc
-    install -m0644 ${WORKDIR}/fstab ${IMAGE_ROOTFS}/etc/fstab
-}
+DEPENDS = "mtd-utils-native"
+INHIBIT_DEFAULT_DEPS = "1"
 
 SRC_URI = "file://fstab"
+
+S = "${UNPACKDIR}"
+
+do_configure[noexec] = "1"
+
+do_compile() {
+    install -d ${B}/rootfs/etc
+    install -m 0644 ${S}/fstab ${B}/rootfs/etc/fstab
+    mkfs.jffs2 --little-endian --eraseblock=0x10000 \
+        --root=${B}/rootfs --output=${B}/etc.jffs2
+}
+
+do_deploy() {
+    install -Dm 0644 ${B}/etc.jffs2 ${DEPLOYDIR}/etc.jffs2
+}
+
+addtask deploy after do_compile before do_build

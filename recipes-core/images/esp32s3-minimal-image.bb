@@ -2,14 +2,21 @@
 
 SUMMARY = "Minimal CramFS image for ESP32-S3 Linux"
 LICENSE = "MIT"
+LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/MIT;md5=0835ade698e0bcf8506ecda2f7b4f302"
 
-inherit core-image
+inherit deploy nopackages
 
-IMAGE_FSTYPES = "cramfs"
-IMAGE_INSTALL = "busybox base-files base-passwd ${MACHINE_ESSENTIAL_EXTRA_RDEPENDS}"
+ESP32S3_ROOTFS_IMAGE ?= ""
 
-IMAGE_NAME = "rootfs"
-IMAGE_LINK_NAME = "rootfs"
+INHIBIT_DEFAULT_DEPS = "1"
+do_configure[noexec] = "1"
+do_compile[noexec] = "1"
 
-# `/etc` is provided by a separate persistent JFFS2 image.
-IMAGE_ROOTFS_EXTRA_SPACE = "0"
+do_deploy() {
+    if [ ! -f "${ESP32S3_ROOTFS_IMAGE}" ]; then
+        bbfatal "ESP32S3_ROOTFS_IMAGE must name a completed CramFS image"
+    fi
+    install -Dm 0644 "${ESP32S3_ROOTFS_IMAGE}" "${DEPLOYDIR}/rootfs.cramfs"
+}
+
+addtask deploy after do_compile before do_build

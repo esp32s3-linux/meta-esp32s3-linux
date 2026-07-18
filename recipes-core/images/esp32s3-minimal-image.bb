@@ -7,8 +7,10 @@ inherit image
 
 IMAGE_INSTALL = "\
     base-files \
+    base-passwd \
     busybox \
     busybox-udhcpc \
+    esp32s3-etc-defaults \
     iw \
     wireless-regdb-static \
     wpa-supplicant \
@@ -16,7 +18,7 @@ IMAGE_INSTALL = "\
 
 IMAGE_LINGUAS = " "
 IMAGE_FSTYPES = "cramfs"
-IMAGE_FEATURES = "read-only-rootfs"
+IMAGE_FEATURES = "read-only-rootfs empty-root-password"
 IMAGE_NAME_SUFFIX = ""
 IMAGE_LINK_NAME = "rootfs"
 IMAGE_ROOTFS_SIZE = "4096"
@@ -37,28 +39,8 @@ IMAGE_PREPROCESS_COMMAND += "esp32s3_drop_ldcache; "
 
 esp32s3_prepare_bootstrap_etc() {
     install -d ${IMAGE_ROOTFS}/data
-    cat > ${IMAGE_ROOTFS}${sysconfdir}/fstab <<'EOF'
-proc /proc proc defaults 0 0
-devpts /dev/pts devpts defaults,gid=5,mode=620,ptmxmode=0666 0 0
-tmpfs /run tmpfs mode=0755,nosuid,nodev 0 0
-mtd:etc /etc jffs2 nofail 0 0
-EOF
-    cat > ${IMAGE_ROOTFS}${sysconfdir}/inittab <<'EOF'
-::sysinit:/bin/mount -t proc proc /proc
-::sysinit:/bin/mkdir -p /dev/pts
-::sysinit:/bin/mount -a
-::sysinit:/sbin/swapon -a
-null::sysinit:/bin/ln -sf /proc/self/fd /dev/fd
-null::sysinit:/bin/ln -sf /proc/self/fd/0 /dev/stdin
-null::sysinit:/bin/ln -sf /proc/self/fd/1 /dev/stdout
-null::sysinit:/bin/ln -sf /proc/self/fd/2 /dev/stderr
-::sysinit:/bin/hostname -F /etc/hostname
-::sysinit:/etc/init.d/rcS
-ttyS0::respawn:/sbin/getty -L 115200 ttyS0 vt100
-::shutdown:/etc/init.d/rcK
-::shutdown:/sbin/swapoff -a
-::shutdown:/bin/umount -a -r
-EOF
+    cp -a ${IMAGE_ROOTFS}${datadir}/esp32s3-etc-defaults/. ${IMAGE_ROOTFS}${sysconfdir}/
+    rm -rf ${IMAGE_ROOTFS}${datadir}/esp32s3-etc-defaults
 }
 
 esp32s3_drop_ldcache() {
@@ -68,3 +50,14 @@ esp32s3_drop_ldcache() {
 # The ESP32-S3 no-MMU kernel executes aligned binaries directly from flash.
 IMAGE_CMD:cramfs:forcevariable = "mkcramfs -L -X ${IMAGE_ROOTFS} ${IMGDEPLOYDIR}/${IMAGE_NAME}.cramfs"
 do_image_cramfs[depends] = "cramfs-tools-native:do_populate_sysroot"
+
+do_image_etc_jffs2() {
+    rm -rf ${WORKDIR}/etc-rootfs
+    install -d ${WORKDIR}/etc-rootfs
+    cp -a --no-preserve=ownership ${IMAGE_ROOTFS}${sysconfdir}/. ${WORKDIR}/etc-rootfs/
+
+    mkfs.jffs2 --little-endian --eraseblock=0x10000 --pad=0x70000 \
+        --root=${WORKDIR}/etc-rootfs --output=${IMGDEPLOYDIR}/etc.jffs2
+}
+do_image_etc_jffs2[depends] = "mtd-utils-native:do_populate_sysroot"
+addtask image_etc_jffs2 after do_image before do_image_complete

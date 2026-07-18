@@ -8,6 +8,7 @@ inherit image
 IMAGE_INSTALL = "\
     base-files \
     busybox \
+    busybox-udhcpc \
     iw \
     wireless-regdb-static \
     wpa-supplicant \

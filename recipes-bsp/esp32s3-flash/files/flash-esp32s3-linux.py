@@ -17,6 +17,8 @@ def partitions(path):
         if len(entry) < 32 or entry == b"\xff" * 32:
             break
         magic, _type, _subtype, address, size, label, _flags = struct.unpack("<HBBII16sI", entry)
+        if magic == 0xEBEB:
+            break
         if magic != 0x50AA:
             raise RuntimeError(f"invalid partition entry at offset {offset:#x}")
         result[label.split(b"\0", 1)[0].decode("ascii")] = (address, size)

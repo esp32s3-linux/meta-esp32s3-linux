@@ -61,6 +61,8 @@ XTENSA_GNU_CONFIG = "/path/to/xtensa-dynconfig/esp32s3.so"
 
 ESP_HOSTED_BUILD_DIR = "/path/to/network_adapter/build"
 ESP32S3_ROOTFS_IMAGE = "/path/to/rootfs.cramfs"
+ESP32S3_ROOTFS_DIR = "/path/to/completed/buildroot/target"
+ESP32S3_MKCRAMFS = "/path/to/completed/buildroot/host/bin/mkcramfs"
 ```
 
 The Xtensa compiler and binutils require `XTENSA_GNU_CONFIG` whenever they run.
@@ -119,6 +121,8 @@ esp32s3-devkitc-1-n16r8-flash-bundle/
   xipImage
   rootfs.cramfs
   etc.jffs2
+  data.jffs2
+  flash-esp32s3-linux.py
 ```
 
 The flashing script validates image sizes against `partition-table.bin`. For
@@ -127,12 +131,17 @@ the N16R8 layout:
 | Partition | Offset | Size |
 |---|---:|---:|
 | `etc` | `0x000b0000` | `0x00070000` |
-| `linux` | `0x00120000` | `0x004e0000` |
-| `rootfs` | `0x00600000` | `0x009f0000` |
+| `linux` | `0x00120000` | `0x00460000` |
+| `rootfs` | `0x00580000` | `0x00440000` |
+| `data` | `0x009c0000` | `0x00400000` |
 
 `etc.jffs2` is padded to the full `etc` partition size. This ensures flashing a
 smaller replacement filesystem does not leave stale JFFS2 nodes in later erase
 blocks.
+
+`data.jffs2` initializes a 4 MB writable filesystem mounted at `/data`. Add
+`--preserve-data` when reflashing a device whose existing `/data` contents must
+be retained.
 
 ## Flash
 
@@ -141,7 +150,7 @@ Install `esptool`, then run the layer's flash helper with the complete bundle:
 ```sh
 python3 -m pip install --user esptool
 
-python3 recipes-bsp/esp32s3-flash/files/flash-esp32s3-linux.py \
+python3 /path/to/esp32s3-devkitc-1-n16r8-flash-bundle/flash-esp32s3-linux.py \
   --port /dev/ttyUSB0 \
   --bundle /path/to/esp32s3-devkitc-1-n16r8-flash-bundle
 ```

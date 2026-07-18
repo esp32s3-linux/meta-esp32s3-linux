@@ -31,6 +31,7 @@ def main():
     parser.add_argument("--bundle", required=True, type=Path)
     parser.add_argument("--baud", default="2000000")
     parser.add_argument("--preserve-etc", action="store_true")
+    parser.add_argument("--preserve-data", action="store_true")
     args = parser.parse_args()
 
     esptool = shutil.which("esptool")
@@ -41,6 +42,26 @@ def main():
     config = json.loads(config_path.read_text())
     extra = config.get("extra_esptool_args", {})
     settings = config.get("flash_settings", {})
+    table = partitions(args.bundle / "partition-table.bin")
+    images = {"linux": "xipImage", "rootfs": "rootfs.cramfs"}
+    if not args.preserve_etc:
+        images["etc"] = "etc.jffs2"
+    if not args.preserve_data:
+        images["data"] = "data.jffs2"
+    for label, filename in images.items():
+        if label not in table:
+            raise RuntimeError(f"partition table does not contain {label!r}")
+        image = args.bundle / filename
+        _, size = table[label]
+        if not image.is_file() or image.stat().st_size > size:
+            raise RuntimeError(f"invalid or oversized {label} image: {image}")
+    firmware = []
+    for address, filename in config["flash_files"].items():
+        artifact = args.bundle / Path(filename).name
+        if not artifact.is_file():
+            raise RuntimeError(f"missing firmware artifact: {artifact}")
+        firmware.extend([address, str(artifact)])
+
     command = [esptool, "--chip", extra.get("chip", "esp32s3"), "--port", args.port, "--baud", args.baud]
     for option in ("before", "after"):
         if option in extra:
@@ -51,25 +72,13 @@ def main():
     for key, option in (("flash_mode", "--flash-mode"), ("flash_freq", "--flash-freq"), ("flash_size", "--flash-size")):
         if key in settings:
             command.extend([option, str(settings[key])])
-    for address, filename in config["flash_files"].items():
-        artifact = args.bundle / Path(filename).name
-        if not artifact.is_file():
-            raise RuntimeError(f"missing firmware artifact: {artifact}")
-        command.extend([address, str(artifact)])
+    command.extend(firmware)
     subprocess.run(command, check=True)
 
-    table = partitions(args.bundle / "partition-table.bin")
-    images = {"linux": "xipImage", "rootfs": "rootfs.cramfs"}
-    if not args.preserve_etc:
-        images["etc"] = "etc.jffs2"
     command = [esptool, "--chip", extra.get("chip", "esp32s3"), "--port", args.port, "--baud", args.baud, "write-flash"]
     for label, filename in images.items():
-        if label not in table:
-            raise RuntimeError(f"partition table does not contain {label!r}")
         image = args.bundle / filename
-        address, size = table[label]
-        if not image.is_file() or image.stat().st_size > size:
-            raise RuntimeError(f"invalid or oversized {label} image: {image}")
+        address, _ = table[label]
         command.extend([f"{address:#x}", str(image)])
     subprocess.run(command, check=True)
 

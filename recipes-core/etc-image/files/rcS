@@ -1,5 +1,8 @@
 #!/bin/sh
 
+mkdir -p /data
+grep -qs ' /data ' /proc/mounts || mount /data
+
 for i in /etc/init.d/S??*; do
     [ ! -f "$i" ] && continue
     case "$i" in

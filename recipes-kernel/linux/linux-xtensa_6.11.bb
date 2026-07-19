@@ -13,11 +13,11 @@ LINUX_VERSION = "6.11"
 PV = "${LINUX_VERSION}+git${SRCPV}"
 
 inherit kernel
+TOOLCHAIN = "external-xtensa-esp32s3"
 
 S = "${UNPACKDIR}/${BP}"
 
 COMPATIBLE_HOST = ".*"
-DEPENDS:remove = "virtual/cross-binutils virtual/cross-cc"
 PATH:prepend = "${XTENSA_EXTERNAL_TOOLCHAIN}/bin:"
 
 KERNEL_IMAGETYPE = "xipImage"

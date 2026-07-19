@@ -27,7 +27,7 @@ def partitions(path):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--port", default="rfc2217://127.0.0.1:14000?ign_set_control")
+    parser.add_argument("--port", default="rfc2217://127.0.0.1:14001?ign_set_control")
     parser.add_argument("--bundle", default=Path(__file__).resolve().parent, type=Path)
     parser.add_argument("--baud", default="2000000")
     parser.add_argument("--preserve-etc", action="store_true")

@@ -6,7 +6,8 @@ LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/MIT;md5=0835ade698e0bcf8506ecda
 
 inherit deploy nopackages
 
-SRC_URI = "file://flash-esp32s3-linux.py"
+SRC_URI = "file://flash-esp32s3-linux.py \
+           file://flash-esp32s3-linux_rfc.py"
 S = "${UNPACKDIR}"
 
 DEPENDS = "esp-hosted-firmware virtual/kernel esp32s3-minimal-image esp32s3-data-image"
@@ -24,6 +25,7 @@ do_deploy() {
         install -m0644 "${DEPLOY_DIR_IMAGE}/${artifact}" "$bundle/${artifact}"
     done
     install -m0755 "${S}/flash-esp32s3-linux.py" "$bundle/flash-esp32s3-linux.py"
+    install -m0755 "${S}/flash-esp32s3-linux_rfc.py" "$bundle/flash-esp32s3-linux_rfc.py"
 
     # Copy every ESP-IDF image named by flasher_args.json, not an assumed list.
     python3 - "${DEPLOY_DIR_IMAGE}/flasher_args.json" "${DEPLOY_DIR_IMAGE}" "$bundle" <<'PY'

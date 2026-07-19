@@ -62,14 +62,9 @@ ESP_HOSTED_BUILD_DIR = "/path/to/network_adapter/build"
 The Xtensa compiler and binutils require `XTENSA_GNU_CONFIG` whenever they run.
 The layer's external toolchain mode exports it into BitBake tasks.
 
-The upstream kernel branch is no longer reliably fetchable by its historical
-symbolic revision. A known-good Buildroot `git4` archive can be selected locally:
-
-```bitbake
-SRC_URI:pn-linux-xtensa = "file:///path/to/linux-xtensa-6.11-esp32-tag-git4.tar.gz \
-                          file://devkit_c1_8m_linux.config"
-S:pn-linux-xtensa = "${UNPACKDIR}/linux-xtensa-6.11-esp32-tag"
-```
+The kernel recipe fetches `jcmvbkbc/linux-xtensa` from GitHub and pins the commit
+referenced by the signed `xtensa-6.11-esp32-tag` annotated tag. No local kernel
+archive override is required.
 
 ## Build
 
@@ -116,6 +111,7 @@ esp32s3-devkitc-1-n16r8-flash-bundle/
   etc.jffs2
   data.jffs2
   flash-esp32s3-linux.py
+  flash-esp32s3-linux_rfc.py
 ```
 
 The flashing script validates image sizes against `partition-table.bin`. For
@@ -150,6 +146,14 @@ python3 /path/to/esp32s3-devkitc-1-n16r8-flash-bundle/flash-esp32s3-linux.py \
 
 On macOS, the port is typically `/dev/tty.usbserial-*` or
 `/dev/cu.usbmodem*`.
+
+For the workspace RFC2217 endpoint, source ESP-IDF 5.5 and run the dedicated
+helper from inside the bundle:
+
+```sh
+source ~/esp/v5.5/esp-idf/export.sh
+python3 flash-esp32s3-linux_rfc.py
+```
 
 Add `--preserve-etc` only when the existing `/etc` partition is known to be
 compatible. Omit it after changing account files, mount layout, or JFFS2 image

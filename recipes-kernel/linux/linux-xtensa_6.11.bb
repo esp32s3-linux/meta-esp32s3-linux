@@ -3,17 +3,18 @@
 SUMMARY = "ESP32-S3 Xtensa Linux kernel"
 HOMEPAGE = "https://github.com/jcmvbkbc/linux-xtensa"
 LICENSE = "GPL-2.0-only"
-LIC_FILES_CHKSUM = "file://COPYING;md5=751419260aa954499f7abaabaa882bbe"
+LIC_FILES_CHKSUM = "file://COPYING;md5=6bc538ed5bd9a7fc9398086aedcd7e46"
 
-SRC_URI = "git://github.com/jcmvbkbc/linux-xtensa.git;protocol=https;branch=xtensa-6.11-esp32-tag \
+SRC_URI = "git://github.com/jcmvbkbc/linux-xtensa.git;protocol=https;nobranch=1 \
            file://devkit_c1_8m_linux.config"
-# Buildroot pins this symbolic revision. The local build configuration may
-# override SRC_URI with its downloaded git4 archive when upstream removes it.
-SRCREV = "xtensa-6.11-esp32-tag"
+# Commit referenced by the signed xtensa-6.11-esp32-tag annotated tag.
+SRCREV = "3b01ad2a1f71b72b27fefa08e4bf6acbe1de874f"
 LINUX_VERSION = "6.11"
 PV = "${LINUX_VERSION}+git${SRCPV}"
 
 inherit kernel
+
+S = "${UNPACKDIR}/${BP}"
 
 COMPATIBLE_HOST = ".*"
 DEPENDS:remove = "virtual/cross-binutils virtual/cross-cc"

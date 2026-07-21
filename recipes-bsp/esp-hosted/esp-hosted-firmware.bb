@@ -1,18 +1,15 @@
 # SPDX-License-Identifier: MIT
 
-SUMMARY = "Deploy the ESP-Hosted firmware set for ESP32-S3"
-LICENSE = "Apache-2.0"
-LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/Apache-2.0;md5=89aea4e17d99a7cacdbeed46a0096b10"
+SUMMARY = "Deploy the pinned ESP-Hosted firmware set for ESP32-S3"
+LICENSE = "CLOSED"
 
-# The first Yocto milestone consumes an ESP-IDF build produced from the pinned
-# ESP-Hosted checkout. This avoids silently using an arbitrary host ESP-IDF
-# environment. Convert this recipe into a fully native ESP-IDF build after its
-# downloads and Python dependencies are mirrored.
-ESP_HOSTED_BUILD_DIR ?= ""
+ESP_HOSTED_FIRMWARE_DIR = "esp-hosted-20260721"
 ESP32S3_PARTITION_TABLE_FILE ?= ""
 
-SRC_URI = "${@'file://' + d.getVar('ESP32S3_PARTITION_TABLE_FILE') if d.getVar('ESP32S3_PARTITION_TABLE_FILE') else ''}"
-S = "${UNPACKDIR}"
+SRC_URI = "file://esp-hosted-esp32s3-16mb-20260721.tar.xz;name=firmware \
+           ${@'file://' + d.getVar('ESP32S3_PARTITION_TABLE_FILE') if d.getVar('ESP32S3_PARTITION_TABLE_FILE') else ''}"
+SRC_URI[firmware.sha256sum] = "d19060d6d72141c7e5def7e8b5b0a4fbdb24a648feb99cb60b15ff68dec4d931"
+S = "${UNPACKDIR}/${ESP_HOSTED_FIRMWARE_DIR}"
 
 inherit deploy nopackages
 
@@ -28,14 +25,11 @@ python do_deploy() {
     import struct
     import bb
 
-    source = d.getVar("ESP_HOSTED_BUILD_DIR")
+    source = os.path.join(d.getVar("UNPACKDIR"), d.getVar("ESP_HOSTED_FIRMWARE_DIR"))
     deploy = d.getVar("DEPLOYDIR")
-    if not source:
-        bb.fatal("ESP_HOSTED_BUILD_DIR must name a completed network_adapter build directory")
-
     config = os.path.join(source, "flasher_args.json")
     if not os.path.isfile(config):
-        bb.fatal("ESP_HOSTED_BUILD_DIR does not contain flasher_args.json: %s" % source)
+        bb.fatal("firmware archive does not contain flasher_args.json: %s" % source)
 
     with open(config, encoding="utf-8") as stream:
         flash_config = json.load(stream)
@@ -48,6 +42,12 @@ python do_deploy() {
 
     files = {"flasher_args.json"}
     files.update(os.path.basename(filename) for filename in flash_files.values())
+    expected_hashes = {
+        "flasher_args.json": "23b9497aefa629a35edcef67f8319df079b0e2c07ac8f7af78522cb7b522f2fd",
+        "bootloader.bin": "35f47b8de37f62e586909550ae65cc3341c59a29c918e1a567b3e57fadb0681a",
+        "network_adapter.bin": "8e70c1afbe7d1c56a84882a27bb8ee87408d5489cdedfd4ec8ce6c963ddf868c",
+        "partition-table.bin": "af14e87cc97a09b34722f2aa5744566aee64e502ae965324d329d66e4e252456",
+    }
     bb.utils.mkdirhier(deploy)
     for filename in sorted(files):
         matches = []
@@ -56,6 +56,13 @@ python do_deploy() {
                 matches.append(os.path.join(root, filename))
         if len(matches) != 1:
             bb.fatal("cannot uniquely locate firmware artifact %s below %s" % (filename, source))
+        checksum = hashlib.sha256()
+        with open(matches[0], "rb") as stream:
+            for block in iter(lambda: stream.read(1024 * 1024), b""):
+                checksum.update(block)
+        digest = checksum.hexdigest()
+        if digest != expected_hashes.get(filename):
+            bb.fatal("unexpected checksum for firmware artifact %s" % filename)
         shutil.copy2(matches[0], os.path.join(deploy, filename))
 
     partition_file = d.getVar("ESP32S3_PARTITION_TABLE_FILE")

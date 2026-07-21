@@ -26,10 +26,12 @@ ABI. ESP-Hosted firmware runs on core 0 and provides Wi-Fi to Linux.
 - Yocto builds the XIP CramFS root from target packages.
 - The root image recipe derives `etc.jffs2` from its finalized package-built
   `/etc` and applies ESP32-S3 policy defaults.
-- ESP-Hosted bootloader, application, and partition table are imported from a
-  completed ESP-IDF build.
+- ESP-Hosted bootloader and application come from a layer-owned versioned,
+  checksummed firmware archive. The recipe generates the Linux partition table
+  from the machine-selected CSV.
 
-The external target toolchain and prebuilt ESP-Hosted firmware remain required.
+The Xtensa Linux toolchain is built by the layer. The default bundle build does
+not require a host ESP-IDF installation or a completed ESP-Hosted build tree.
 
 ## Required Layers
 
@@ -46,17 +48,12 @@ produce a conventional Yocto SDK.
 
 ## Local Configuration
 
-Set the machine and local artifact paths in `build/conf/local.conf`. Do not add
-machine-local absolute paths to this layer.
+Set the machine in `build/conf/local.conf`. Do not add machine-local absolute
+paths to this layer.
 
 ```bitbake
 MACHINE = "esp32s3-devkitc-1-n16r8"
 TCMODE = "external-xtensa-esp32s3-fdpic"
-
-XTENSA_EXTERNAL_TOOLCHAIN = "/path/to/xtensa-esp32s3-linux-uclibcfdpic"
-XTENSA_GNU_CONFIG = "/path/to/xtensa-dynconfig/esp32s3.so"
-
-ESP_HOSTED_BUILD_DIR = "/path/to/network_adapter/build"
 ```
 
 The Xtensa compiler and binutils require `XTENSA_GNU_CONFIG` whenever they run.

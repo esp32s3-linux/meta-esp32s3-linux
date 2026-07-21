@@ -1,0 +1,51 @@
+From 320c2066d5ad81b48d7a312966827031c56550bb Mon Sep 17 00:00:00 2001
+From: ESP32-S3 Linux BSP <noreply@example.com>
+Date: Tue, 21 Jul 2026 21:39:27 +0700
+Subject: [PATCH] svr: support no-MMU builds without fork
+
+Upstream-Status: Inappropriate [no-MMU target adaptation]
+---
+ src/svr-main.c    | 4 ++--
+ src/svr-runopts.c | 4 ++++
+ 2 files changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/src/svr-main.c b/src/svr-main.c
+index 6373e59..11e5fae 100644
+--- a/src/svr-main.c
++++ b/src/svr-main.c
+@@ -302,7 +302,7 @@ static void main_noinetd(int argc, char ** argv, const char* multipath) {
+ 				goto out;
+ 			}
+ 
+-#if DEBUG_NOFORK
++#if DEBUG_NOFORK || !defined(HAVE_FORK)
+ 			fork_ret = 0;
+ #else
+ 			fork_ret = fork();
+@@ -330,7 +330,7 @@ static void main_noinetd(int argc, char ** argv, const char* multipath) {
+ 				m_free(remote_host);
+ 				m_free(remote_port);
+ 
+-#if !DEBUG_NOFORK
++#if !DEBUG_NOFORK && defined(HAVE_FORK)
+ 				if (setsid() < 0) {
+ 					dropbear_exit("setsid: %s", strerror(errno));
+ 				}
+diff --git a/src/svr-runopts.c b/src/svr-runopts.c
+index 8034c50..2f1b109 100644
+--- a/src/svr-runopts.c
++++ b/src/svr-runopts.c
+@@ -160,7 +160,11 @@ void svr_getopts(int argc, char ** argv) {
+ 	svr_opts.bannerfile = NULL;
+ 	svr_opts.banner = NULL;
+ 	svr_opts.forced_command = NULL;
++#ifdef HAVE_FORK
+ 	svr_opts.forkbg = 1;
++#else
++	svr_opts.forkbg = 0;
++#endif
+ 	svr_opts.norootlogin = 0;
+ #ifdef HAVE_GETGROUPLIST
+ 	svr_opts.restrict_group = NULL;
+-- 
+2.34.1
